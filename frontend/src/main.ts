@@ -1,6 +1,18 @@
 import { createApp } from 'vue'
-import './style.css'
+import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
+import './styles'
 
-createApp(App).use(router).mount('#app')
+const app = createApp(App)
+const pinia = createPinia()
+
+app.use(pinia)
+app.use(router)
+
+// 初始化认证状态
+import { useAuth } from './store/auth'
+const authStore = useAuth()
+authStore.initAuth()
+
+app.mount('#app')

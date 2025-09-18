@@ -1,43 +1,27 @@
 <template>
   <div id="app">
-    <main>
+    <Navbar />
+    <main class="page">
       <router-view />
     </main>
   </div>
 </template>
 
-<style scoped>
-#app {
-  font-family: Arial, sans-serif;
-}
+<script setup lang="ts">
+import { watch } from 'vue'
+import { Navbar } from './components'
+import { useAuth } from './store/auth'
+import './styles'
 
-nav {
-  background: #f8f9fa;
-  padding: 1rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #ddd;
-}
+// 创建认证store实例，会自动初始化认证状态
+const authStore = useAuth()
 
-nav a {
-  color: #333;
-  text-decoration: none;
-  padding: 0.5rem 1rem;
-  margin: 0 0.25rem;
-  border-radius: 4px;
-}
-
-nav a:hover {
-  background: #e9ecef;
-}
-
-nav a.router-link-active {
-  background: #007bff;
-  color: white;
-}
-
-main {
-  padding: 0;
-}
-</style>
+// 监听全局认证状态变化
+watch(
+  () => authStore.isAuthenticated,
+  (newValue, oldValue) => {
+    console.log('App: Global auth state changed from', oldValue, 'to', newValue)
+  },
+  { immediate: true }
+)
+</script>
