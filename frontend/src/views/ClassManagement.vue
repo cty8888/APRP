@@ -2,7 +2,7 @@
   <div class="class-management">
     <div class="container">
       <div class="page-header">
-        <h1>班级管理</h1>
+        <h1 class="page-title">班级管理</h1>
         <p class="page-subtitle">管理您的班级，创建和加入学习班级</p>
       </div>
 
@@ -21,19 +21,38 @@
           创建班级
         </button>
         <button 
-          :class="['tab', { active: activeTab === 'join' }]"
-          @click="activeTab = 'join'"
+          :class="['tab', { active: activeTab === 'search' }]"
+          @click="activeTab = 'search'"
         >
-          加入班级
+          搜索班级
         </button>
       </div>
 
       <div class="tab-content">
         <!-- 班级列表 -->
         <div v-if="activeTab === 'list'" class="tab-pane">
-          <ClassList 
-            ref="classListRef"
-            @selectClass="handleSelectClass" 
+          <div class="content-section">
+            <ClassList 
+              ref="classListRef"
+              @selectClass="handleSelectClass"
+              @editClass="handleEditClass"
+              @viewStudents="handleViewStudents"
+              @classDeleted="handleClassDeleted"
+            />
+          </div>
+        </div>
+
+        <!-- 班级详情 -->
+        <div v-if="activeTab === 'detail'" class="tab-pane">
+          <ClassDetail 
+            :classData="selectedClass!"
+            @editClass="handleEditClass"
+            @createAssignment="handleCreateAssignment"
+            @selectAssignment="handleSelectAssignment"
+            @submitAssignment="handleSubmitAssignment"
+            @viewSubmissions="handleViewSubmissions"
+            @editAssignment="handleEditAssignment"
+            @deleteAssignment="handleDeleteAssignment"
           />
         </div>
 
@@ -44,11 +63,22 @@
           </div>
         </div>
 
-        <!-- 加入班级 -->
-        <div v-if="activeTab === 'join'" class="tab-pane">
+        <!-- 搜索并加入班级 -->
+        <div v-if="activeTab === 'search'" class="tab-pane">
           <div class="form-container">
-            <JoinClassForm @success="handleJoinSuccess" />
+            <SearchClassForm @success="handleSearchSuccess" />
           </div>
+        </div>
+
+
+        <!-- 班级学生列表 -->
+        <div v-if="activeTab === 'students'" class="tab-pane">
+          <ClassStudentsList 
+            :classId="viewingStudentsClass.id"
+            :classInfo="viewingStudentsClass"
+            @close="handleCloseStudents"
+            @viewStudentSubmissions="handleViewStudentSubmissions"
+          />
         </div>
       </div>
     </div>
@@ -87,19 +117,49 @@
         </div>
       </div>
     </div>
+
+    <!-- 编辑班级弹窗 -->
+    <div v-if="editingClass" class="modal-overlay" @click="closeEditModal">
+      <div class="modal" @click.stop>
+        <div class="modal-header">
+          <h3>编辑班级</h3>
+          <button @click="closeEditModal" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <EditClassForm 
+            :classData="editingClass"
+            @success="handleEditSuccess"
+            @cancel="closeEditModal"
+          />
+        </div>
+        <div class="modal-footer">
+          <button 
+            @click="deleteClass(editingClass.id)"
+            class="btn btn-danger"
+          >
+            删除班级
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuth } from '../store/auth'
-import { ClassList, CreateClassForm, JoinClassForm } from '../components'
+import { ClassList, ClassDetail, CreateClassForm, EditClassForm, SearchClassForm, ClassStudentsList } from '../components'
+import { classApi } from '../api'
 import type { ClassResponse } from '../types'
 
+const router = useRouter()
 const { user } = useAuth()
 
 const activeTab = ref('list')
 const selectedClass = ref<ClassResponse | null>(null)
+const editingClass = ref<ClassResponse | null>(null)
+const viewingStudentsClass = ref<{ id: number; name: string }>({ id: 0, name: '' })
 const classListRef = ref()
 
 const getRoleText = (role: string) => {
@@ -116,7 +176,12 @@ const formatDate = (dateString: string) => {
 }
 
 const handleSelectClass = (classItem: ClassResponse) => {
-  selectedClass.value = classItem
+  // 根据用户角色跳转到不同的任务管理页面
+  if (user?.role === 'teacher') {
+    router.push(`/classes/${classItem.id}/assignments`)
+  } else {
+    router.push(`/my-classes/${classItem.id}`)
+  }
 }
 
 const closeModal = () => {
@@ -132,13 +197,117 @@ const handleCreateSuccess = (classData: any) => {
   }
 }
 
-const handleJoinSuccess = (data: any) => {
+const handleSearchSuccess = (data: any) => {
   console.log('加入班级成功:', data)
   activeTab.value = 'list'
   // 刷新班级列表
   if (classListRef.value) {
     classListRef.value.refreshClasses()
   }
+}
+
+const handleEditClass = (classItem: ClassResponse) => {
+  editingClass.value = classItem
+}
+
+const handleViewStudents = (classItem: ClassResponse) => {
+  viewingStudentsClass.value = {
+    id: classItem.id,
+    name: classItem.name
+  }
+  activeTab.value = 'students'
+}
+
+const handleCloseStudents = () => {
+  activeTab.value = 'list'
+  viewingStudentsClass.value = { id: 0, name: '' }
+}
+
+const handleViewStudentSubmissions = (student: any) => {
+  // 跳转到提交管理页面，显示该学生的提交
+  window.location.href = `/submissions?studentId=${student.id}`
+}
+
+const handleClassDeleted = (classId: number) => {
+  console.log('班级删除成功:', classId)
+  // 班级列表会自动刷新
+}
+
+const handleEditSuccess = (updatedClass: ClassResponse) => {
+  console.log('班级编辑成功:', updatedClass)
+  editingClass.value = null
+  // 刷新班级列表
+  if (classListRef.value) {
+    classListRef.value.refreshClasses()
+  }
+}
+
+const closeEditModal = () => {
+  editingClass.value = null
+}
+
+const deleteClass = async (classId: number) => {
+  if (!confirm('确定要删除这个班级吗？此操作不可撤销。')) {
+    return
+  }
+  
+  try {
+    await classApi.delete(classId)
+    // 关闭编辑弹窗
+    editingClass.value = null
+    // 刷新班级列表
+    if (classListRef.value) {
+      classListRef.value.refreshClasses()
+    }
+    console.log('班级删除成功:', classId)
+  } catch (error) {
+    console.error('Failed to delete class:', error)
+    alert('删除班级失败，请重试')
+  }
+}
+
+const handleCreateAssignment = () => {
+  // 跳转到任务管理页面创建任务
+  if (selectedClass.value) {
+    router.push(`/classes/${selectedClass.value.id}/assignments`)
+  }
+}
+
+const handleSelectAssignment = (assignment: any) => {
+  // 跳转到任务详情页面
+  if (selectedClass.value) {
+    if (user?.role === 'student') {
+      router.push(`/my-classes/${selectedClass.value.id}/assignments/${assignment.id}`)
+    } else {
+      router.push(`/classes/${selectedClass.value.id}/assignments/${assignment.id}/submissions`)
+    }
+  }
+}
+
+const handleSubmitAssignment = (assignment: any) => {
+  // 学生提交作业
+  if (selectedClass.value) {
+    router.push(`/my-classes/${selectedClass.value.id}/assignments/${assignment.id}`)
+  }
+}
+
+const handleViewSubmissions = (assignment: any) => {
+  // 老师查看提交
+  if (selectedClass.value) {
+    router.push(`/classes/${selectedClass.value.id}/assignments/${assignment.id}/submissions`)
+  }
+}
+
+const handleEditAssignment = () => {
+  // 编辑任务
+  if (selectedClass.value) {
+    router.push(`/classes/${selectedClass.value.id}/assignments`)
+  }
+}
+
+const handleDeleteAssignment = (assignmentId: number) => {
+  // 任务删除成功，刷新班级详情
+  console.log('任务删除成功:', assignmentId)
 }
 </script>
 
@@ -147,61 +316,18 @@ const handleJoinSuccess = (data: any) => {
   padding: var(--spacing-8) 0;
 }
 
-.page-header {
-  text-align: center;
-  margin-bottom: var(--spacing-10);
-}
-
-.page-header h1 {
-  font-size: var(--font-size-3xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-primary);
-  margin-bottom: var(--spacing-3);
-}
-
-.page-subtitle {
-  font-size: var(--font-size-lg);
-  color: var(--color-text-secondary);
-  margin: 0;
-}
-
-.tabs {
-  display: flex;
-  justify-content: center;
-  border-bottom: 2px solid var(--color-border);
-  margin-bottom: var(--spacing-8);
-  gap: var(--spacing-2);
-}
-
-.tab {
-  background: none;
-  border: none;
-  padding: var(--spacing-4) var(--spacing-6);
-  cursor: pointer;
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-secondary);
-  transition: all var(--transition-fast);
-  border-radius: var(--radius-md) var(--radius-md) 0 0;
-  position: relative;
-}
-
-.tab:hover {
-  color: var(--color-text-primary);
-  background-color: var(--color-background-muted);
-}
-
-.tab.active {
-  color: var(--color-primary);
-  background-color: var(--color-background);
-  border-bottom: 2px solid var(--color-primary);
-  margin-bottom: -2px;
-  font-weight: var(--font-weight-semibold);
-}
+/* 页面样式使用全局样式类 */
 
 .tab-content {
-  max-width: 600px;
-  margin: 0 auto;
+  width: 100%;
+}
+
+.content-section {
+  background: var(--color-background);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-8);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
 }
 
 .form-container {
@@ -295,5 +421,14 @@ const handleJoinSuccess = (data: any) => {
   flex: 1;
   text-align: center;
   text-decoration: none;
+}
+
+.modal-footer {
+  padding: var(--spacing-6);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-background-secondary);
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
 }
 </style>

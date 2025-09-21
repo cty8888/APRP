@@ -3,6 +3,7 @@ from fastapi import HTTPException, status, UploadFile, Response
 from typing import List
 from sqlalchemy import func
 from io import BytesIO
+import json
 from app.models.student_class import StudentClass
 from app.models.user import User
 from app.models.class_model import Class
@@ -84,7 +85,8 @@ class SubmissionService:
         try:
             content = file.file.read()
             file_obj = BytesIO(content)
-            file_json = parse_docx(file_obj)
+            file_json_dict = parse_docx(file_obj)
+            file_json = json.dumps(file_json_dict, ensure_ascii=False)
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -236,6 +238,14 @@ class SubmissionService:
         class_id = class_obj.id if class_obj else 0
         class_name = class_obj.name if class_obj else "未知班级"
         
+        # 解析 file_json 字符串为字典
+        file_json_data = None
+        if submission.file_json:
+            try:
+                file_json_data = json.loads(submission.file_json)
+            except json.JSONDecodeError:
+                file_json_data = None
+        
         # 构建响应
         return SubmissionDetailResponse(
             id=submission.id,
@@ -243,7 +253,7 @@ class SubmissionService:
             assignment_title=assignment.title,
             class_id=class_id,
             class_name=class_name,
-            file_json=submission.file_json,
+            file_json=file_json_data,
             report=submission.report,
             score=submission.score,
             submitted_at=submission.submitted_at,
@@ -298,6 +308,14 @@ class SubmissionService:
         class_id = class_obj.id if class_obj else 0
         class_name = class_obj.name if class_obj else "未知班级"
         
+        # 解析 file_json 字符串为字典
+        file_json_data = None
+        if submission.file_json:
+            try:
+                file_json_data = json.loads(submission.file_json)
+            except json.JSONDecodeError:
+                file_json_data = None
+        
         # 构建响应
         return SubmissionDetailResponse(
             id=submission.id,
@@ -305,7 +323,7 @@ class SubmissionService:
             assignment_title=assignment.title,
             class_id=class_id,
             class_name=class_name,
-            file_json=submission.file_json,
+            file_json=file_json_data,
             report=submission.report,
             score=submission.score,
             submitted_at=submission.submitted_at,

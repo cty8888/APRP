@@ -73,8 +73,9 @@ const handleLogin = async () => {
   
   if (result.success) {
     // 登录成功后跳转到首页或重定向页面
-    const redirectTo = router.currentRoute.value.query.redirect as string || '/'
-    router.push(redirectTo)
+    const redirectTo = router.currentRoute.value.query.redirect as string || '/dashboard'
+    console.log('LoginForm: Login successful, redirecting to:', redirectTo)
+    await router.push(redirectTo)
   } else {
     error.value = result.error || '登录失败'
   }

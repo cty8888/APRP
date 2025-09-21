@@ -30,6 +30,7 @@ export interface Token {
   token_type: string
 }
 
+
 export interface AuthState {
   user: User | null
   token: string | null

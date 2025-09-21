@@ -10,24 +10,10 @@
       {{ success }}
     </div>
 
-    <div class="form-group">
-      <label for="assignmentId" class="form-label">选择任务</label>
-      <select
-        id="assignmentId"
-        v-model="selectedAssignmentId"
-        class="form-input"
-        required
-        :disabled="isLoading"
-      >
-        <option value="">请选择任务</option>
-        <option 
-          v-for="assignment in pendingAssignments" 
-          :key="assignment.id" 
-          :value="assignment.id"
-        >
-          {{ assignment.title }} ({{ assignment.class_name }})
-        </option>
-      </select>
+    <div v-if="assignmentInfo" class="assignment-info">
+      <h3>{{ assignmentInfo.title }}</h3>
+      <p class="assignment-class">{{ assignmentInfo.class_name }}</p>
+      <p v-if="assignmentInfo.description" class="assignment-description">{{ assignmentInfo.description }}</p>
     </div>
 
     <div class="form-group">
@@ -52,7 +38,7 @@
     <button
       type="submit"
       class="btn btn-primary"
-      :disabled="isLoading || !selectedAssignmentId || !selectedFile"
+      :disabled="isLoading || !selectedFile"
       style="width: 100%;"
     >
       <span v-if="isLoading">提交中...</span>
@@ -63,25 +49,32 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { submissionApi } from '../../api'
-import type { PendingAssignmentResponse } from '../../types'
+import { submissionApi, assignmentApi } from '../../api'
+import type { AssignmentResponse } from '../../types'
+
+interface Props {
+  assignmentId?: number
+}
+
+const props = defineProps<Props>()
 
 const emit = defineEmits<{
   success: [data: any]
 }>()
 
-const pendingAssignments = ref<PendingAssignmentResponse[]>([])
-const selectedAssignmentId = ref<number | ''>('')
+const assignmentInfo = ref<AssignmentResponse | null>(null)
 const selectedFile = ref<File | null>(null)
 const error = ref<string | null>(null)
 const success = ref<string | null>(null)
 const isLoading = ref(false)
 
-const loadPendingAssignments = async () => {
+const loadAssignmentInfo = async () => {
+  if (!props.assignmentId) return
+  
   try {
-    pendingAssignments.value = await submissionApi.getPendingAssignments()
+    assignmentInfo.value = await assignmentApi.getAssignmentDetail(props.assignmentId)
   } catch (error) {
-    console.error('Failed to load pending assignments:', error)
+    console.error('Failed to load assignment info:', error)
   }
 }
 
@@ -119,26 +112,22 @@ const handleSubmit = async () => {
   error.value = null
   success.value = null
   
-  if (!selectedAssignmentId.value || !selectedFile.value) {
-    error.value = '请选择任务和文件'
+  if (!props.assignmentId || !selectedFile.value) {
+    error.value = '请选择文件'
     return
   }
 
   isLoading.value = true
   
   try {
-    const result = await submissionApi.create(selectedAssignmentId.value as number, selectedFile.value)
+    const result = await submissionApi.create(props.assignmentId, selectedFile.value)
     success.value = result.message
     emit('success', result)
     
     // 重置表单
-    selectedAssignmentId.value = ''
     selectedFile.value = null
     const fileInput = document.getElementById('file') as HTMLInputElement
     if (fileInput) fileInput.value = ''
-    
-    // 重新加载待提交任务
-    await loadPendingAssignments()
   } catch (err: any) {
     console.error('Submit assignment error:', err)
     error.value = err.response?.data?.detail || '提交作业失败'
@@ -148,32 +137,62 @@ const handleSubmit = async () => {
 }
 
 onMounted(() => {
-  loadPendingAssignments()
+  loadAssignmentInfo()
 })
 </script>
 
 <style scoped>
+.assignment-info {
+  background: var(--color-background-muted);
+  padding: var(--spacing-6);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--spacing-6);
+  border: 1px solid var(--color-border);
+}
+
+.assignment-info h3 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-2) 0;
+}
+
+.assignment-class {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-base);
+  margin: 0 0 var(--spacing-2) 0;
+}
+
+.assignment-description {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  margin: 0;
+  line-height: 1.5;
+}
+
 .form-hint {
-  color: #666;
-  font-size: 0.9rem;
-  margin-top: 0.25rem;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  margin-top: var(--spacing-2);
 }
 
 .file-info {
-  background: #f8f9fa;
-  padding: 1rem;
-  border-radius: 4px;
-  margin-bottom: 1rem;
+  background: var(--color-background-muted);
+  padding: var(--spacing-4);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-4);
+  border: 1px solid var(--color-border);
 }
 
 .file-info p {
-  margin: 0.25rem 0;
-  color: #333;
+  margin: var(--spacing-1) 0;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
 }
 
 .alert-success {
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
+  background-color: var(--color-success-light);
+  color: var(--color-success);
+  border: 1px solid var(--color-success);
 }
 </style>

@@ -26,17 +26,7 @@
         :disabled="isLoading"
       >
         <span v-if="isLoading">加入中...</span>
-        <span v-else>加入班级</span>
-      </button>
-      
-      <button
-        type="button"
-        @click="handleJoinAsTeacher"
-        class="btn btn-outline"
-        :disabled="isLoading"
-      >
-        <span v-if="isLoading">加入中...</span>
-        <span v-else>作为助教加入</span>
+        <span v-else>{{ user?.role === 'teacher' ? '作为助教加入' : '加入班级' }}</span>
       </button>
     </div>
   </form>
@@ -45,11 +35,14 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { classApi } from '../../api'
+import { useAuth } from '../../store/auth'
 import type { JoinClassRequest } from '../../types'
 
 const emit = defineEmits<{
   success: [data: any]
 }>()
+
+const { user } = useAuth()
 
 const form = reactive<JoinClassRequest>({
   class_id: 0
@@ -69,7 +62,11 @@ const handleSubmit = async () => {
   isLoading.value = true
   
   try {
-    const result = await classApi.joinAsStudent(form)
+    // 根据用户角色选择加入方式
+    const result = user?.role === 'teacher' 
+      ? await classApi.joinAsTeacher(form)
+      : await classApi.joinAsStudent(form)
+    
     emit('success', result)
     form.class_id = 0
   } catch (err: any) {
@@ -80,36 +77,10 @@ const handleSubmit = async () => {
   }
 }
 
-const handleJoinAsTeacher = async () => {
-  error.value = null
-  
-  if (!form.class_id || form.class_id <= 0) {
-    error.value = '请输入有效的班级ID'
-    return
-  }
-
-  isLoading.value = true
-  
-  try {
-    const result = await classApi.joinAsTeacher(form)
-    emit('success', result)
-    form.class_id = 0
-  } catch (err: any) {
-    console.error('Join class as teacher error:', err)
-    error.value = err.response?.data?.detail || '加入班级失败'
-  } finally {
-    isLoading.value = false
-  }
-}
 </script>
 
 <style scoped>
 .form-actions {
-  display: flex;
-  gap: 1rem;
-}
-
-.form-actions button {
-  flex: 1;
+  text-align: center;
 }
 </style>

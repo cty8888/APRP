@@ -29,9 +29,15 @@ export const authApi = {
     return response.data
   },
 
-  // 登出（可用于调用后端登出API，目前为空实现）
-  logout: () => {
-    // 如果后端有登出接口，可以在这里调用
-    // 本地存储的清理由store负责
+  // 刷新访问令牌
+  refreshToken: async (): Promise<Token> => {
+    const response = await apiClient.post('/auth/refresh')
+    return response.data
+  },
+
+  // 用户登出
+  logout: async (): Promise<{ message: string; user_id: number }> => {
+    const response = await apiClient.post('/auth/logout')
+    return response.data
   }
 }

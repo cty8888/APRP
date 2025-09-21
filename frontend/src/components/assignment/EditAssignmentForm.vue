@@ -1,11 +1,10 @@
 <template>
   <form @submit.prevent="handleSubmit" class="form">
-    <h2>创建任务</h2>
+    <h2>编辑任务</h2>
     
     <div v-if="error" class="alert alert-error">
       {{ error }}
     </div>
-
 
     <div class="form-group">
       <label for="title" class="form-label">任务标题</label>
@@ -32,70 +31,87 @@
       ></textarea>
     </div>
 
-    <button
-      type="submit"
-      class="btn btn-primary"
-      :disabled="isLoading"
-      style="width: 100%;"
-    >
-      <span v-if="isLoading">创建中...</span>
-      <span v-else>创建任务</span>
-    </button>
+    <div class="form-actions">
+      <button
+        type="button"
+        @click="$emit('cancel')"
+        class="btn btn-outline"
+        :disabled="isLoading"
+      >
+        取消
+      </button>
+      <button
+        type="submit"
+        class="btn btn-primary"
+        :disabled="isLoading || !form.title?.trim()"
+      >
+        <span v-if="isLoading">保存中...</span>
+        <span v-else>保存修改</span>
+      </button>
+    </div>
   </form>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { assignmentApi } from '../../api'
-import type { AssignmentCreate } from '../../types'
+import type { AssignmentResponse, AssignmentUpdate } from '../../types'
 
 interface Props {
-  classId?: number
+  assignment: AssignmentResponse
 }
 
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  success: [assignmentData: any]
+  success: [assignmentData: AssignmentResponse]
+  cancel: []
 }>()
 
-const form = reactive<AssignmentCreate>({
+const form = reactive<AssignmentUpdate>({
   title: '',
-  description: '',
-  class_id: props.classId || 0
+  description: ''
 })
 
 const error = ref<string | null>(null)
 const isLoading = ref(false)
 
+onMounted(() => {
+  // 初始化表单数据
+  form.title = props.assignment.title
+  form.description = props.assignment.description || ''
+})
+
 const handleSubmit = async () => {
   error.value = null
   
-  if (!form.title.trim()) {
+  if (!form.title?.trim()) {
     error.value = '请输入任务标题'
-    return
-  }
-  
-  if (!form.class_id) {
-    error.value = '班级ID无效'
     return
   }
 
   isLoading.value = true
   
   try {
-    const result = await assignmentApi.create(form)
+    const result = await assignmentApi.update(props.assignment.id, form)
     emit('success', result)
-    
-    // 重置表单
-    form.title = ''
-    form.description = ''
-    form.class_id = props.classId || 0
   } catch (err: any) {
-    console.error('Create assignment error:', err)
-    error.value = err.response?.data?.detail || '创建任务失败'
+    console.error('Update assignment error:', err)
+    error.value = err.response?.data?.detail || '更新任务失败'
   } finally {
     isLoading.value = false
   }
 }
 </script>
+
+<style scoped>
+.form-actions {
+  display: flex;
+  gap: var(--spacing-4);
+  justify-content: flex-end;
+}
+
+.form-actions button {
+  min-width: 100px;
+}
+</style>

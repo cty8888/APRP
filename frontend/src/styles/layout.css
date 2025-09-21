@@ -9,7 +9,9 @@
 
 .page {
   flex: 1;
-  padding: var(--spacing-8) 0;
+  padding: var(--spacing-12) 0;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  min-height: calc(100vh - 80px);
 }
 
 /* 首页 */
@@ -70,17 +72,32 @@
   align-items: center;
   justify-content: center;
   padding: var(--spacing-4);
-  background-color: var(--color-background-secondary);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+}
+
+.auth-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwgMjU1LCAyNTUsIDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=');
+  opacity: 0.3;
 }
 
 .auth-card {
-  background: var(--color-background);
+  background: rgba(255, 255, 255, 0.95);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
-  padding: var(--spacing-8);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  padding: var(--spacing-10);
   width: 100%;
-  max-width: 400px;
-  border: 1px solid var(--color-border);
+  max-width: 450px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(20px);
+  position: relative;
+  z-index: 1;
 }
 
 .auth-header {
@@ -112,24 +129,38 @@
 
 /* 仪表板 */
 .dashboard {
-  padding: var(--spacing-8) 0;
+  padding: var(--spacing-12) 0;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  min-height: 100vh;
 }
 
 .dashboard-header {
   text-align: center;
-  margin-bottom: var(--spacing-10);
+  margin-bottom: var(--spacing-16);
+  position: relative;
+}
+
+.dashboard-header::after {
+  content: '';
+  position: absolute;
+  bottom: -2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-hover));
+  border-radius: 2px;
 }
 
 .dashboard-subtitle {
   font-size: var(--font-size-xl);
   color: var(--color-text-secondary);
   font-weight: var(--font-weight-normal);
-  margin-top: var(--spacing-3);
+  margin-top: var(--spacing-4);
 }
 
 .dashboard-content {
-  max-width: 800px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .dashboard-grid {
@@ -182,38 +213,56 @@
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--spacing-6);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-8);
   margin-top: var(--spacing-8);
 }
 
 .stat-card {
-  background: var(--color-background);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-6);
+  background: linear-gradient(135deg, var(--color-background) 0%, #fafbfc 100%);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-8);
   text-align: center;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
   border: 1px solid var(--color-border);
   transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-hover));
 }
 
 .stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
 }
 
 .stat-card h3 {
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-medium);
   color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-4);
+  margin-bottom: var(--spacing-6);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .stat-number {
   font-size: var(--font-size-4xl);
   font-weight: var(--font-weight-bold);
-  color: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0;
+  line-height: 1;
 }
 
 /* 404页面 */

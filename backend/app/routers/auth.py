@@ -33,6 +33,16 @@ async def read_users_me(current_user: Annotated[User, Depends(get_current_user)]
     """获取当前用户信息"""
     return AuthService.get_user_profile(current_user)
 
+@router.post("/refresh", response_model=Token, summary="刷新访问令牌")
+async def refresh_token(current_user: Annotated[User, Depends(get_current_user)]):
+    """刷新访问令牌"""
+    return AuthService.refresh_user_token(current_user)
+
+@router.post("/logout", summary="用户登出")
+async def logout_user(current_user: Annotated[User, Depends(get_current_user)]):
+    """用户登出"""
+    return AuthService.logout_user(current_user)
+
 
 
 

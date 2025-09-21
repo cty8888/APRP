@@ -15,11 +15,16 @@ export { default as BaseInput } from './common/BaseInput.vue'
 
 // 班级管理组件
 export { default as CreateClassForm } from './class/CreateClassForm.vue'
+export { default as EditClassForm } from './class/EditClassForm.vue'
 export { default as JoinClassForm } from './class/JoinClassForm.vue'
+export { default as SearchClassForm } from './class/SearchClassForm.vue'
 export { default as ClassList } from './class/ClassList.vue'
+export { default as ClassDetail } from './class/ClassDetail.vue'
+export { default as ClassStudentsList } from './class/ClassStudentsList.vue'
 
 // 任务管理组件
 export { default as CreateAssignmentForm } from './assignment/CreateAssignmentForm.vue'
+export { default as EditAssignmentForm } from './assignment/EditAssignmentForm.vue'
 export { default as AssignmentList } from './assignment/AssignmentList.vue'
 
 // 提交管理组件

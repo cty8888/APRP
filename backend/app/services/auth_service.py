@@ -99,3 +99,28 @@ class AuthService:
     def get_user_profile(user: User) -> UserResponse:
         """获取用户信息"""
         return user
+
+    @staticmethod
+    def refresh_user_token(user: User) -> dict:
+        """刷新用户令牌"""
+        # 创建新的访问令牌
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": str(user.id), "username": user.name, "role": user.role.value},
+            expires_delta=access_token_expires
+        )
+        
+        return {
+            "access_token": access_token,
+            "token_type": "bearer"
+        }
+
+    @staticmethod
+    def logout_user(user: User) -> dict:
+        """用户登出"""
+        # 这里可以添加 token 黑名单逻辑
+        # 目前只是返回成功消息，因为 JWT 是无状态的
+        return {
+            "message": "Successfully logged out",
+            "user_id": user.id
+        }

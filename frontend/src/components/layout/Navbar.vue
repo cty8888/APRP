@@ -8,12 +8,10 @@
         <div class="navbar-nav">
           <router-link to="/dashboard" class="nav-link">仪表板</router-link>
           
-          <!-- 教师导航 -->
+          <!-- 班级管理 -->
           <template v-if="user?.role === 'teacher'">
             <router-link to="/classes" class="nav-link">班级管理</router-link>
           </template>
-          
-          <!-- 学生导航 -->
           <template v-else>
             <router-link to="/my-classes" class="nav-link">我的班级</router-link>
           </template>
@@ -31,10 +29,12 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { useAuth } from '../../store/auth'
+import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 
 const authStore = useAuth()
-const { user, logout } = authStore
+const { user } = storeToRefs(authStore)
+const { logout } = authStore
 const router = useRouter()
 
 // 使用computed确保响应性

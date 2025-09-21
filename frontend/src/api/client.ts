@@ -1,8 +1,9 @@
 import axios, { type AxiosInstance, type AxiosResponse } from 'axios'
 
 // 创建axios实例
+const apiBaseUrl = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8000'
 const apiClient: AxiosInstance = axios.create({
-  baseURL: 'http://localhost:8000', // 后端API地址
+  baseURL: apiBaseUrl, // 后端API地址
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -11,10 +12,31 @@ const apiClient: AxiosInstance = axios.create({
 
 // 请求拦截器 - 添加认证token
 apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+  async (config) => {
+    try {
+      // 优先从 Pinia store 获取 token
+      const { useAuth } = await import('../store/auth')
+      const authStore = useAuth()
+      
+      // 检查并刷新即将过期的token
+      await authStore.checkAndRefreshToken()
+      
+      const token = authStore.getCurrentToken()
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+        console.log('🔑 Token added to request:', config.url, 'Token:', token.substring(0, 20) + '...')
+      } else {
+        console.log('⚠️ No token available for request:', config.url)
+      }
+    } catch (_) {
+      // 如果 store 不可用，回退到 localStorage
+      const token = localStorage.getItem('auth_token')
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+        console.log('🔑 Using localStorage token for request:', config.url)
+      } else {
+        console.log('⚠️ No token in localStorage for request:', config.url)
+      }
     }
     return config
   },
@@ -28,14 +50,25 @@ apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
     return response
   },
-  (error) => {
+  async (error) => {
     if (error.response?.status === 401) {
-      // 清除本地存储的token
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      // 使用路由重定向而不是直接修改location
-      // 注意：这里不能直接使用router，因为这是在模块级别
-      // 让路由守卫处理重定向逻辑
+      // 避免在 logout 请求时触发循环调用
+      const isLogoutRequest = error.config?.url?.includes('/auth/logout')
+      
+      if (!isLogoutRequest) {
+        // 同步 Pinia 状态清理认证信息（懒加载避免循环依赖）
+        try {
+          const { useAuth } = await import('../store/auth')
+          const authStore = useAuth()
+          // 直接清理状态，不调用 logout API
+          authStore.clearAuthState()
+        } catch (_) {
+          // 如果 store 不可用，手动清理 localStorage
+          localStorage.removeItem('auth_token')
+          localStorage.removeItem('auth_user')
+          localStorage.removeItem('auth_token_expiry')
+        }
+      }
     }
     return Promise.reject(error)
   }

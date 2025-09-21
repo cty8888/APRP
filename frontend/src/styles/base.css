@@ -24,8 +24,9 @@ body {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-normal);
   color: var(--color-text-primary);
-  background-color: var(--color-background-secondary);
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   line-height: var(--line-height-normal);
+  min-height: 100vh;
 }
 
 /* 链接样式 */

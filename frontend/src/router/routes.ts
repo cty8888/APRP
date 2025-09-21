@@ -7,7 +7,8 @@ import {
   NotFound,
   ClassManagement,
   AssignmentManagement,
-  SubmissionManagement
+  SubmissionManagement,
+  SubmissionDetail
 } from '../views'
 
 const routes: RouteRecordRaw[] = [
@@ -51,6 +52,12 @@ const routes: RouteRecordRaw[] = [
     name: 'AssignmentSubmissions',
     component: SubmissionManagement,
     meta: { requiresAuth: true, roles: ['teacher'] }
+  },
+  {
+    path: '/submissions/:id',
+    name: 'SubmissionDetail',
+    component: SubmissionDetail,
+    meta: { requiresAuth: true }
   },
   
   // 学生路由
